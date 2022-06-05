@@ -3,14 +3,17 @@ package com.mg.customer;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class CustomerService  {
 
-    private CustomerRepoistory customerRepoistory;
+    private final CustomerRepoistory customerRepoistory;
+    private final RestTemplate restTemplate;
 
-    public CustomerService(CustomerRepoistory customerRepoistory) {
+    public CustomerService(CustomerRepoistory customerRepoistory, RestTemplate restTemplate) {
         this.customerRepoistory = customerRepoistory;
+        this.restTemplate = restTemplate;
     }
 
     public void regsiterCustomer(CustomerRegistrationRequest request){
@@ -20,6 +23,23 @@ public class CustomerService  {
         .email(request.getEmail())
         .build();
 
-        customerRepoistory.save(customer);
+        customerRepoistory.saveAndFlush(customer);
+
+        System.out.println("start to send the message!!!");
+
+        //todo: check if fraudster
+        FraudCheckResponse fraudCheckResponse = restTemplate.getForObject(
+                "http://localhost:8081/api/v1/fraud-check/{customerId}",
+                FraudCheckResponse.class,
+                customer.getId()
+        );
+
+        System.out.println("send the message!!!");
+
+        if (fraudCheckResponse.isFraudster()){
+            throw new IllegalStateException("fraudster");
         }
+
+        //todo: send notificaton
+    }
 }
