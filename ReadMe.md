@@ -51,6 +51,41 @@ psql -U mg -d customer #psql to the db - "customer" with the username - "mg"
 ```
 <h2>4. Service Discovery</h2>
 <h3><a href="https://youtu.be/-gLLeoS1m6s"> Link to Tutorial</a></h3>
-<li>Eureka Server</li>
-<li>"RestTemplate" @Bean is created</li>
-<li>"RestTemplate" Bena is jected to "CustomerService" via Constructor</li><br>
+<h3> Step 1: Configure Eureka Server : </h3>
+<li>Eureka Server - @EnableEurekaServer</li>
+<li>Eureka Server - import Eureka server dependency</li>
+<li>Eureka Server - define port in applicaiton.yml</li>
+<br>
+<h3> Step 2: Configure Eureka Client for both Customer and Fraud : </h3>
+<li>Customer - @EnableEurekaClinet</li>
+<li>Customer - import Eureka client dependency</li>
+<li>Customer - define Eureka url defaultZone: http://localhost:8761/eureka in application.yml</li>
+<br>
+<h3> Step 3: Update RestTemplate to remove port number dependency : </h3>
+<li>Remove the port dependency between Customer and Fraud service in "CustomerService"</li>
+<li>Before the change </li>
+
+```
+//todo: check if fraudster
+        FraudCheckResponse fraudCheckResponse = restTemplate.getForObject(
+                "http://localhost:8081/api/v1/fraud-check/{customerId}",
+                FraudCheckResponse.class,
+                customer.getId()
+        );
+```
+
+<li>After the change</li>
+
+```
+//todo: check if fraudster
+        FraudCheckResponse fraudCheckResponse = restTemplate.getForObject(
+                "http://FRAUD/api/v1/fraud-check/{customerId}",
+                FraudCheckResponse.class,
+                customer.getId()
+        );
+```
+
+<li>NOTE: RestTemplate Bean needs to be load balanced, even has one Fraud </li>
+<li>Add annotation - @LoadBalanced in CustomerConfig, which RestTemplate Bean is declared.</li>
+
+
